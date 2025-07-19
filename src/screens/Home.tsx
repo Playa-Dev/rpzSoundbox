@@ -14,6 +14,7 @@ import { FlatGrid } from 'react-native-super-grid';
 
 import soundLibrary from '../../assets/category/config';
 import { StackParams } from '../../App';
+import {DownloadButton} from "../components/DownloadButton";
 
 type HomeScreenRouteProp = RouteProp<StackParams, 'Home'>;
 type HomeScreenNavigationProp = NativeStackNavigationProp<StackParams, 'Home'>;
@@ -57,31 +58,34 @@ export const Home = ({ route }: Props) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.textCat}>
-                {category !== undefined ? soundLibrary[category]?.name : 'Accueil'}
-            </Text>
-            <ScrollView style={{ marginTop: 20 }}>
-                <FlatGrid
-                    data={sounds}
-                    keyExtractor={(item, index) => item.name + index}
-                    itemDimension={130}
-                    spacing={15}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={styles.item}
-                            onPress={() => playSound(item.audio)}
-                        >
-                            <ImageBackground
-                                style={styles.itemImage}
-                                imageStyle={{ borderRadius: 50 }}
-                                source={item.image}
-                            />
-                            <Text style={styles.text}>{item.name}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            </ScrollView>
+        <View style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <Text style={styles.textCat}>
+                    {category !== undefined ? soundLibrary[category]?.name : 'Accueil'}
+                </Text>
+                <ScrollView style={{ marginTop: 20 }}>
+                    <FlatGrid
+                        data={sounds}
+                        keyExtractor={(item, index) => item.name + index}
+                        itemDimension={130}
+                        spacing={15}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.item}
+                                onPress={() => playSound(item.audio)}
+                            >
+                                <ImageBackground
+                                    style={styles.itemImage}
+                                    imageStyle={{ borderRadius: 50 }}
+                                    source={item.image}
+                                />
+                                <Text style={styles.text}>{item.name}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </ScrollView>
+            </View>
+            <DownloadButton sounds={sounds} />
         </View>
     );
 };
