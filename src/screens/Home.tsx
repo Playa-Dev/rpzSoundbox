@@ -1,134 +1,122 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-    Alert,
-    Dimensions,
     ImageBackground,
-    Linking, PixelRatio,
-    SafeAreaView,
-    StyleSheet,
-    ScrollView,
+    ScrollView, StyleSheet,
     Text,
     TouchableOpacity,
-    View
-} from "react-native";
-import soundLibrary from "../../assets/category/config";
-import { StackNavigationProp } from "@react-navigation/stack";
+    View,
+} from 'react-native';
 import { RouteProp } from '@react-navigation/native';
-import { StackParams } from "../../App";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RFValue } from 'react-native-responsive-fontsize';
+import { Audio } from 'expo-av';
 import { FlatGrid } from 'react-native-super-grid';
-import { Ionicons } from "@expo/vector-icons";
-import { RFValue } from "react-native-responsive-fontsize";
-import { Audio } from "expo-av";
-import LogoDiscord from '../components/LogoDiscord';
 
-const { width, height } = Dimensions.get("window");
+import soundLibrary from '../../assets/category/config';
+import { StackParams } from '../../App';
 
 type HomeScreenRouteProp = RouteProp<StackParams, 'Home'>;
-
-type HomeScreenNavigationProp = StackNavigationProp<StackParams, 'Home'>;
+type HomeScreenNavigationProp = NativeStackNavigationProp<StackParams, 'Home'>;
 
 type Props = {
     route: HomeScreenRouteProp;
     navigation: HomeScreenNavigationProp;
 };
 
-export const Home = ({ route, navigation }: Props) => {
-    const category = route.params.category;
-    const sound = new Audio.Sound();
-    let prevSound: Audio.Sound;
+export const Home = ({ route }: Props) => {
+    const { category } = route.params ?? {};
+    const soundRef = useRef<Audio.Sound | null>(null);
 
+    // Nettoyage du son à la désactivation du composant
     useEffect(() => {
-        let prevSound;
-        navigation.setOptions({
-            headerTitle: () => <Text style={styles.textHeader}>RPZ SoundBox</Text>,
-            headerStyle: {
-                backgroundColor: "#19171C",
-                elevation: 0,
-                shadowRadius: 0,
-                shadowOffset: {
-                    height: 0,
-                    width: 0,
-                },
-                borderBottomWidth: 0
-            },
-            headerTitleAlign: 'center',
-            headerLeft: () =>
-            (<TouchableOpacity onPress={() => {
-                if (prevSound) prevSound.stopAsync();
-                navigation.push("Categories");
-            }}>
-                <Ionicons name="apps-outline" size={32} style={{ marginLeft: 15, marginTop: 5, color: "#FFF" }} />
-            </TouchableOpacity>),
-            headerRight: () =>
-            (<View style={{ display: 'flex', flexDirection: 'row' }}>
-                <TouchableOpacity onPress={() => Linking.openURL("https://twitter.com/Playa_Dev")}>
-                    <Ionicons name="logo-twitter" size={32} style={{ marginRight: 15, marginTop: 5, color: "#00acee" }} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => Linking.openURL("https://discord.gg/Ry5qNYJG83")} style={{ marginRight: 15, marginTop: 5 }}>
-                    <LogoDiscord width={32} height={32} />
-                </TouchableOpacity>
-            </View>),
-        });
+        return () => {
+            if (soundRef.current) {
+                soundRef.current.unloadAsync().catch(() => {});
+            }
+        };
     }, []);
+
+    // Récupération des sons selon catégorie ou tous
+    const sounds = category !== undefined
+        ? soundLibrary[category]?.sounds ?? []
+        : soundLibrary.flatMap(s => s.sounds);
+
+    // Fonction pour jouer un son, avec arrêt et nettoyage du son précédent
+    const playSound = async (audioSource: any) => {
+        try {
+            if (soundRef.current) {
+                await soundRef.current.unloadAsync();
+                soundRef.current = null;
+            }
+            const { sound } = await Audio.Sound.createAsync(audioSource);
+            soundRef.current = sound;
+            await sound.playAsync();
+        } catch (error) {
+            console.error('Error playing sound:', error);
+        }
+    };
 
     return (
         <View style={styles.container}>
             <Text style={styles.textCat}>
-                {category !== undefined ? soundLibrary[category]?.name : "Accueil"}
+                {category !== undefined ? soundLibrary[category]?.name : 'Accueil'}
             </Text>
             <ScrollView style={{ marginTop: 20 }}>
-                    <FlatGrid
-                        data={category !== undefined ? soundLibrary[category]?.sounds : soundLibrary.flatMap(s => s.sounds)}
-                        keyExtractor={(s, i) => s.name + i}
-                        renderItem={({ item, index }) => {
-                            return (
-                                <TouchableOpacity
-                                    style={{ height: 175, borderRadius: 50, justifyContent: 'center' }}
-                                    onPress={async () => {
-                                        if (prevSound) await prevSound.unloadAsync();
-                                        await sound.loadAsync(item.audio);
-                                        await sound.playAsync();
-                                        prevSound = sound;
-                                        //await sound.unloadAsync();
-                                    }}>
-                                    <ImageBackground
-                                        style={{ height: 100, width: 100, alignSelf: 'center', position: "relative" }}
-                                        imageStyle={{ borderRadius: 50 }}
-                                        source={item.image} />
-                                    <Text style={styles.text}>{item.name}</Text>
-                                </TouchableOpacity>
-                            )
-                        }}
-                    />
+                <FlatGrid
+                    data={sounds}
+                    keyExtractor={(item, index) => item.name + index}
+                    itemDimension={130}
+                    spacing={15}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.item}
+                            onPress={() => playSound(item.audio)}
+                        >
+                            <ImageBackground
+                                style={styles.itemImage}
+                                imageStyle={{ borderRadius: 50 }}
+                                source={item.image}
+                            />
+                            <Text style={styles.text}>{item.name}</Text>
+                        </TouchableOpacity>
+                    )}
+                />
             </ScrollView>
         </View>
     );
-}
-
+};
 
 const styles = StyleSheet.create({
     container: {
         paddingTop: 0,
-        backgroundColor: "#19171C",
-        height: "100%",
-        width: "100%",
-        color: "#FFF"
+        backgroundColor: '#19171C',
+        height: '100%',
+        width: '100%',
     },
     text: {
-        color: "#fff",
+        color: '#fff',
         fontSize: 18,
-
         textAlign: 'center',
-        textAlignVertical: 'center',
-        //height: 30,
     },
     textCat: {
-        color: "#FFF",
+        color: '#FFF',
         fontSize: RFValue(14, 580),
-        marginLeft: 15
+        marginLeft: 15,
     },
     textHeader: {
         fontSize: RFValue(18, 580),
-        color: "#FFF"
-    }
+        color: '#FFF',
+    },
+    item: {
+        height: 175,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    itemImage: {
+        height: 100,
+        width: 100,
+        alignSelf: 'center',
+        overflow: 'hidden',
+    },
 });
