@@ -56,7 +56,6 @@ const CustomHeader = ({
                     </TouchableOpacity>
                     {(Platform.OS === 'ios' || Platform.OS === 'android') && (
                         <TouchableOpacity onPress={onRightPressDiscord}>
-                            {/* Remplacer par ton composant LogoDiscord si besoin */}
                             <Ionicons name="logo-discord" size={32} color="#7289da" />
                         </TouchableOpacity>
                     )}

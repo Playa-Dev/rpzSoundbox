@@ -3,8 +3,6 @@ import {
     Dimensions,
     ImageBackground,
     Linking,
-    Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -108,8 +106,8 @@ export const Categories = ({ navigation }: Props) => {
                     />
                 </Dialog.Container>
             )}
-            <ScrollView style={{ height: Platform.OS === 'web' ? height : '100%' }}>
-                <Text style={[styles.textCat, { marginBottom: 15 }]}>Choisis une catégorie :</Text>
+            <View style={{ flex: 1 }}>
+                <Text style={[styles.textCat, { paddingVertical: 10 }]}>Choisis une catégorie :</Text>
                 <FlatGrid
                     data={[undefined, ...soundLibrary.map((s) => ({ name: s.name, image: s.image }))]}
                     keyExtractor={(item, index) => (item?.name ?? 'general') + '-' + index}
@@ -130,7 +128,7 @@ export const Categories = ({ navigation }: Props) => {
                         </TouchableOpacity>
                     )}
                 />
-            </ScrollView>
+            </View>
         </View>
     );
 };

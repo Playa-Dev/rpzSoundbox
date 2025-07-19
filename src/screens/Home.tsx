@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
     ImageBackground,
-    ScrollView, StyleSheet,
+    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -82,10 +82,10 @@ export const Home = ({ navigation, route }: Props) => {
                 }
             />
             <View style={styles.container}>
-                <Text style={styles.textCat}>
+                <Text style={[styles.textCat, { paddingVertical: 10 }]}>
                     {category !== undefined ? soundLibrary[category]?.name : 'Accueil'}
                 </Text>
-                <ScrollView style={{ marginTop: 20 }}>
+                <View style={{ flex: 1 }}>
                     <FlatGrid
                         data={sounds}
                         keyExtractor={(item, index) => item.name + index}
@@ -105,7 +105,7 @@ export const Home = ({ navigation, route }: Props) => {
                             </TouchableOpacity>
                         )}
                     />
-                </ScrollView>
+                </View>
             </View>
             <DownloadButton sounds={sounds} />
         </View>
