@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
     ImageBackground,
     StyleSheet,
@@ -9,14 +9,14 @@ import {
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { FlatGrid } from 'react-native-super-grid';
 
 import soundLibrary from '../../assets/category/config';
 import { StackParams } from '../../App';
-import {DownloadButton} from "../components/DownloadButton";
-import CustomHeader from "../components/CustomHeader";
-import {usePopup} from "../hooks/PopupContext";
+import { DownloadButton } from '../components/DownloadButton';
+import CustomHeader from '../components/CustomHeader';
+import { usePopup } from '../hooks/PopupContext';
 
 type HomeScreenRouteProp = RouteProp<StackParams, 'Home'>;
 type HomeScreenNavigationProp = NativeStackNavigationProp<StackParams, 'Home'>;
@@ -29,32 +29,27 @@ type Props = {
 export const Home = ({ navigation, route }: Props) => {
     const { openPopup } = usePopup();
     const { category } = route.params ?? {};
-    const soundRef = useRef<Audio.Sound | null>(null);
 
-    // Nettoyage du son à la désactivation du composant
-    useEffect(() => {
-        return () => {
-            if (soundRef.current) {
-                soundRef.current.unloadAsync().catch(() => {});
-            }
-        };
-    }, []);
-
-    // Récupération des sons selon catégorie ou tous
+    // On récupère la liste des sons à jouer selon catégorie ou tous
     const sounds = category !== undefined
         ? soundLibrary[category]?.sounds ?? []
         : soundLibrary.flatMap(s => s.sounds);
 
-    // Fonction pour jouer un son, avec arrêt et nettoyage du son précédent
-    const playSound = async (audioSource: any) => {
+    // Hook expo-audio: on crée un player audio "vide" au départ (sans source)
+    // On remplacera la source à chaque lecture
+    const player = useAudioPlayer();
+
+    // Fonction pour jouer un son
+    const playSound = (audioSource: any) => {
         try {
-            if (soundRef.current) {
-                await soundRef.current.unloadAsync();
-                soundRef.current = null;
-            }
-            const { sound } = await Audio.Sound.createAsync(audioSource);
-            soundRef.current = sound;
-            await sound.playAsync();
+            // Remplace la source audio (format : require ou { uri: string })
+            player.replace(audioSource);
+
+            // Remet la lecture au début
+            player.seekTo(0);
+
+            // Lance la lecture
+            player.play();
         } catch (error) {
             console.error('Error playing sound:', error);
         }
@@ -116,7 +111,7 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: 0,
         backgroundColor: '#19171C',
-        height: '100%',
+        flex: 1,
         width: '100%',
     },
     text: {
@@ -128,10 +123,6 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: RFValue(14, 580),
         marginLeft: 15,
-    },
-    textHeader: {
-        fontSize: RFValue(18, 580),
-        color: '#FFF',
     },
     item: {
         height: 175,

@@ -15,10 +15,11 @@ import Checkbox from 'expo-checkbox';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { Asset } from 'expo-asset';
+import { DraggableWrapper } from './DraggableWrapper';
 
 type Sound = {
     name: string;
-    audio: string | Asset; // URI locale ou distante
+    audio: string | Asset | number; // number pour require()
 };
 
 type DownloadButtonProps = {
@@ -29,7 +30,6 @@ const requestStoragePermission = async (): Promise<boolean> => {
     if (Platform.OS === 'android') {
         const androidVersion = Platform.Version as number;
         if (androidVersion < 33) {
-            // Permission explicite pour Android < 13
             const granted = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
                 {
@@ -45,11 +45,7 @@ const requestStoragePermission = async (): Promise<boolean> => {
             }
         }
         const { status } = await MediaLibrary.requestPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert("Permission requise", "L'application nécessite l'accès aux fichiers média.");
-            return false;
-        }
-        return true;
+        return status === 'granted';
     } else {
         const { status } = await MediaLibrary.requestPermissionsAsync();
         return status === 'granted';
@@ -80,7 +76,23 @@ export const DownloadButton = ({ sounds }: DownloadButtonProps) => {
                 const sound = sounds.find((s) => s.name === name);
                 if (!sound) continue;
 
-                const audioUri = typeof sound.audio === 'string' ? sound.audio : sound.audio.uri;
+                let audioUri: string;
+
+                if (typeof sound.audio === 'string') {
+                    audioUri = sound.audio;
+                } else if (sound.audio && typeof sound.audio === 'object' && 'uri' in sound.audio) {
+                    audioUri = sound.audio.uri;
+                } else {
+                    const asset = Asset.fromModule(sound.audio as number);
+                    await asset.downloadAsync();
+                    audioUri = asset.uri;
+                }
+
+                if (!audioUri) {
+                    console.warn(`URI manquant pour le son "${name}"`);
+                    continue;
+                }
+
                 const filename = name.replace(/\s+/g, '_') + '.mp3';
                 const fileUri = FileSystem.cacheDirectory + filename;
 
@@ -92,7 +104,7 @@ export const DownloadButton = ({ sounds }: DownloadButtonProps) => {
                 console.log('Asset créé:', asset);
             }
 
-            Alert.alert('Succès', 'Les sons ont été téléchargés dans le dossier de musique.');
+            Alert.alert('Succès', 'Les sons ont été téléchargés.');
             setModalVisible(false);
             setSelectedSounds([]);
         } catch (error) {
@@ -103,13 +115,9 @@ export const DownloadButton = ({ sounds }: DownloadButtonProps) => {
 
     return (
         <>
-            <TouchableOpacity
-                style={styles.floatingButton}
-                onPress={() => setModalVisible(true)}
-                activeOpacity={0.7}
-            >
+            <DraggableWrapper onPress={() => setModalVisible(true)}>
                 <FontAwesome5 name="file-download" size={32} color="white" />
-            </TouchableOpacity>
+            </DraggableWrapper>
 
             <Modal animationType="slide" transparent visible={modalVisible}>
                 <View style={styles.modalOverlay}>
@@ -132,10 +140,6 @@ export const DownloadButton = ({ sounds }: DownloadButtonProps) => {
                                     <Text style={styles.soundName}>{item.name}</Text>
                                 </TouchableOpacity>
                             )}
-                            style={{ marginBottom: 20 }}
-                            initialNumToRender={20}
-                            maxToRenderPerBatch={20}
-                            windowSize={10}
                         />
 
                         <View style={styles.modalButtons}>
@@ -164,23 +168,6 @@ export const DownloadButton = ({ sounds }: DownloadButtonProps) => {
 };
 
 const styles = StyleSheet.create({
-    floatingButton: {
-        position: 'absolute',
-        bottom: 30,
-        right: 20,
-        backgroundColor: '#4BBA31',
-        width: 75,
-        height: 75,
-        borderRadius: 75,
-        alignItems: 'center',
-        justifyContent: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        zIndex: 100,
-    },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -212,6 +199,7 @@ const styles = StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginTop: 10,
     },
     modalButton: {
         flex: 1,
