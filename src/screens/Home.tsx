@@ -15,6 +15,8 @@ import { FlatGrid } from 'react-native-super-grid';
 import soundLibrary from '../../assets/category/config';
 import { StackParams } from '../../App';
 import {DownloadButton} from "../components/DownloadButton";
+import CustomHeader from "../components/CustomHeader";
+import {usePopup} from "../hooks/PopupContext";
 
 type HomeScreenRouteProp = RouteProp<StackParams, 'Home'>;
 type HomeScreenNavigationProp = NativeStackNavigationProp<StackParams, 'Home'>;
@@ -24,7 +26,8 @@ type Props = {
     navigation: HomeScreenNavigationProp;
 };
 
-export const Home = ({ route }: Props) => {
+export const Home = ({ navigation, route }: Props) => {
+    const { openPopup } = usePopup();
     const { category } = route.params ?? {};
     const soundRef = useRef<Audio.Sound | null>(null);
 
@@ -58,7 +61,26 @@ export const Home = ({ route }: Props) => {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: "#19171C" }}>
+            <CustomHeader
+                title="RPZ SoundBox"
+                leftIconName="apps-outline"
+                onLeftPress={() => navigation.replace('Categories')}
+                onRightPressTwitter={() =>
+                    openPopup({
+                        url: 'https://twitter.com/Playa_Dev',
+                        title: '🐦 Quitter l’application',
+                        description: 'Tu viens nous suivre sur Twitter ?\nPromis, on ne poste pas que des gifs de Bazil !',
+                    })
+                }
+                onRightPressDiscord={() =>
+                    openPopup({
+                        url: 'https://discord.gg/Ry5qNYJG83',
+                        title: "Quitter l’application",
+                        description: "Tu vas quitter l’application pour rejoindre notre serveur Discord.\nVeux-tu continuer ?",
+                    })
+                }
+            />
             <View style={styles.container}>
                 <Text style={styles.textCat}>
                     {category !== undefined ? soundLibrary[category]?.name : 'Accueil'}

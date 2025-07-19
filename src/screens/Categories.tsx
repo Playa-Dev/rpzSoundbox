@@ -18,6 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from 'react-native-dialog';
 import { FlatGrid } from 'react-native-super-grid';
 import { StackParams } from '../../App';
+import CustomHeader from "../components/CustomHeader";
+import {usePopup} from "../hooks/PopupContext";
 
 type CategoriesScreenRouteProp = RouteProp<StackParams, 'Categories'>;
 type CategoriesScreenNavigationProp = NativeStackNavigationProp<StackParams, 'Categories'>;
@@ -30,6 +32,7 @@ type Props = {
 const { height } = Dimensions.get('window');
 
 export const Categories = ({ navigation }: Props) => {
+    const { openPopup } = usePopup();
     const [firstLaunch, setFirstLaunch] = useState(false);
     const [showWelcomeDialog, setShowWelcomeDialog] = useState(true);
 
@@ -53,6 +56,25 @@ export const Categories = ({ navigation }: Props) => {
 
     return (
         <View style={styles.container}>
+            <CustomHeader
+                title="Catégories"
+                leftIconName="home-outline"
+                onLeftPress={() => navigation.replace('Home')}
+                onRightPressTwitter={() =>
+                    openPopup({
+                        url: 'https://twitter.com/Playa_Dev',
+                        title: '🐦 Quitter l’application',
+                        description: 'Tu viens nous suivre sur Twitter ?\nPromis, on ne poste pas que des gifs de Bazil !',
+                    })
+                }
+                onRightPressDiscord={() =>
+                    openPopup({
+                        url: 'https://discord.gg/Ry5qNYJG83',
+                        title: "Quitter l’application",
+                        description: "Tu vas quitter l’application pour rejoindre notre serveur Discord.\nVeux-tu continuer ?",
+                    })
+                }
+            />
             {firstLaunch && showWelcomeDialog && (
                 <Dialog.Container visible={showWelcomeDialog}>
                     <Dialog.Title>Merci d'avoir téléchargé l'application !</Dialog.Title>
